@@ -1,17 +1,9 @@
-import os
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
 from config import RETENTION_DATA_DIR, PLOT_DATA_DIR
-
-
-def load_data(data_dir):
-    fnames = [f for f in os.listdir(data_dir) if f.endswith('.csv')]
-    data = {f.split('.csv')[0]: pd.read_csv(os.path.join(data_dir, f)) for f in fnames}
-    data = {name: df.drop(['Unnamed: 0'], axis=1) for name, df in data.items()}
-    return data
+import common as cm
 
 
 def add_retention(df):
@@ -150,7 +142,7 @@ def _retention_improvement_bar_plot(stats, ax):
 
 
 if __name__ == '__main__':
-    data = load_data(RETENTION_DATA_DIR)
+    data = cm.load_data(RETENTION_DATA_DIR)
     data = {name: add_retention(df) for name, df in data.items()}
     data['norm_0525_vicuna_13b_reward'] = normalise(
             data['0715_pyg'],
