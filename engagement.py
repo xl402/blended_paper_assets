@@ -68,6 +68,48 @@ def get_improvement_stats(df, control):
     return pd.DataFrame(out)
 
 
+def plot_engagement_statistics(stats):
+    fig, ax = plt.subplots(1, 3, figsize=(15, 5), dpi=300)
+    ax[0] = _retention_improvement_bar_plot(stats, ax[0])
+    ax[1] = cm.bar_plot(stats, ax[1], 'true_intercept')
+    ax[2] = cm.bar_plot(stats, ax[2], 'slope')
+    plt.subplots_adjust(bottom=0.25)
+    plt.tight_layout()
+    return fig
+
+
+def _retention_improvement_bar_plot(stats, ax):
+    colors = ['#c4c4c4', '#f8b4c8', '#fb3b46', '#fd1dcc', '#fff59f']
+    values = [model['d30'] for model in stats.values()]
+    labels = list(stats.keys())
+    sorted_indices = [3, 4, 1, 2, 0]
+    values = [values[i] for i in sorted_indices]
+    values = [(v - values[-1]) * 100 / values[-1]  for v in values]
+    labels = [labels[i] for i in sorted_indices]
+    bar_colors = [colors[i] for i in sorted_indices]
+    ax.bar(labels, values, capsize=5, color=bar_colors, edgecolor='black')
+    ax.set_title('Engagement Improvement Over Pygmalion %')
+    ax.set_ylim(0, None)
+    ax.set_xticklabels(labels, rotation=45, ha='right')
+    return ax
+
+
+def verification_plot(data, model_stats):
+    fig, ax = plt.subplots(figsize=(7, 5), dpi=300)
+    colors = ['#c4c4c4', '#f8b4c8', '#fb3b46', '#fd1dcc', '#fff59f']
+    for idx, (name, df) in enumerate(data.items()):
+        engagement = df['mean_engagement']
+        midpoint = (df['upper_bounds'] + df['lower_bounds']) / 2
+        stats = model_stats[name]
+        expected = np.exp(stats['slope'] * np.log(midpoint) + stats['intercept'])
+        ax.plot(midpoint, engagement, 'o', label=name, color=colors[idx])
+        ax.plot(midpoint, expected, '--', color=colors[idx])
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+    plt.legend()
+    return fig
+
+
 if __name__ == '__main__':
     data = cm.load_data(ENGAGEMENT_DATA_DIR)
     data['norm_0525_vicuna_13b_reward'] = normalise(
@@ -79,8 +121,13 @@ if __name__ == '__main__':
             'Pygmalion+ (6B)': data['0715_pyg'],
             'Vicuna+ (13B)': data['norm_0525_vicuna_13b_reward'],
             'ChaiLLM (6B)': data['0715_zl_v2e'],
-            'Blended (13, 6, 6B)': data['0715_blended_v3_baseline'],
+            'Blended (13B, 6B, 6B)': data['0715_blended_v3_baseline'],
             'GPT3.5 (175B)': data['0715_azure_davinci'],
             }
     fig = plot_engagement(data, 'GPT3.5 (175B)')
     fig.savefig(f'{PLOT_DATA_DIR}/engagement.png')
+    engagement_stats = {name: cm.run_regression(df, 'mean_engagement') for name, df in data.items()}
+    fig = plot_engagement_statistics(engagement_stats)
+    fig.savefig(f'{PLOT_DATA_DIR}/engagement_stats.png')
+    fig = verification_plot(data, engagement_stats)
+    fig.savefig(f'{PLOT_DATA_DIR}/engagement_verification.png')
