@@ -63,26 +63,14 @@ def plot_retention(data, control):
     return fig
 
 
-def _format_retention_plot(ax):
-    ax.set_xlabel('Day')
-    ax.set_ylabel('Improvement Over GPT3.5 (%)')
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    ax.set_xticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30])
-    ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30])
-    ax.set_yticks([0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4])
-    ax.set_yticklabels(["-30", "-20", "-10", '0', "10", "20", "30", "40"])
-    ax.set_xlim(1, 30.2)
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.22), ncol=3)
-    ax.spines[['right', 'top']].set_visible(False)
-    return ax
-
-
-def _add_line_of_best_fit_plot(stats, ax, color):
-    params = run_regression(stats, 'improvement')
-    expected = np.exp(params['slope'] * np.log(stats['day_n']) + params['intercept'])
-    ax.plot(stats['day_n'], expected, '--', color=color)
-    return ax
+def plot_retention_statistics(stats):
+    fig, ax = plt.subplots(1, 3, figsize=(15, 5), dpi=300)
+    ax[0] = _retention_improvement_bar_plot(stats, ax[0])
+    ax[1] = _bar_plot(stats, ax[1], 'intercept')
+    ax[2] = _bar_plot(stats, ax[2], 'slope')
+    plt.subplots_adjust(bottom=0.25)
+    plt.tight_layout()
+    return fig
 
 
 def run_regression(df, statistics):
@@ -105,14 +93,26 @@ def run_regression(df, statistics):
     return out
 
 
-def plot_retention_statistics(stats):
-    fig, ax = plt.subplots(1, 3, figsize=(15, 5), dpi=300)
-    ax[0] = _retention_improvement_bar_plot(stats, ax[0])
-    ax[1] = _bar_plot(stats, ax[1], 'intercept')
-    ax[2] = _bar_plot(stats, ax[2], 'slope')
-    plt.subplots_adjust(bottom=0.25)
-    plt.tight_layout()
-    return fig
+def _format_retention_plot(ax):
+    ax.set_xlabel('Day')
+    ax.set_ylabel('Improvement Over GPT3.5 (%)')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30])
+    ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30])
+    ax.set_yticks([0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4])
+    ax.set_yticklabels(["-30", "-20", "-10", '0', "10", "20", "30", "40"])
+    ax.set_xlim(1, 30.2)
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.22), ncol=3)
+    ax.spines[['right', 'top']].set_visible(False)
+    return ax
+
+
+def _add_line_of_best_fit_plot(stats, ax, color):
+    params = run_regression(stats, 'improvement')
+    expected = np.exp(params['slope'] * np.log(stats['day_n']) + params['intercept'])
+    ax.plot(stats['day_n'], expected, '--', color=color)
+    return ax
 
 
 def _bar_plot(stats, ax, stat_label):
