@@ -23,14 +23,24 @@ def plot_engagement(data, control):
         color = colors[idx]
         stats = get_improvement_stats(df, control_df)
         ax.errorbar(stats['midpoint'], stats['ratio'], yerr=stats['se'], label=name, color=color)
-
+        ax = _add_line_of_best_fit_plot(stats, ax, color)
     ax = _format_retention_plot(ax)
     plt.tight_layout()
     return fig
 
 
+def _add_line_of_best_fit_plot(stats, ax, color):
+    # not exact value, but close enough
+    ratio = np.log(stats.dropna().ratio)
+    x = np.log(stats.dropna().midpoint)
+    slope, intercept = np.polyfit(x, ratio, 1)
+    x = np.linspace(x.min(), x.max(), 100)
+    ax.plot(np.exp(x), np.exp(intercept + slope * x), '--', color=color)
+    return ax
+
+
 def _format_retention_plot(ax):
-    ax.set_xlabel('Seconds Since Experiment')
+    ax.set_xlabel('Days Since Experiment Start')
     ax.set_ylabel('Improvement Over GPT3.5 (%)')
     ax.set_xscale('log')
     ax.set_yscale('log')
